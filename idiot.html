@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bouncing Popups (Harmless Demo)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: #0b0b0b;
+      color: #eaeaea;
+      cursor: pointer;
+    }
+    .center {
+      display: grid;
+      place-items: center;
+      height: 100%;
+      text-align: center;
+      user-select: none;
+    }
+    h1 { font-size: 2.2rem; margin-bottom: .5rem; }
+    p { opacity: .8; }
+    .hint { font-size: .9rem; opacity: .6; }
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div>
+      <h1>Click Anywhere</h1>
+      <p>Opens 6 bouncing popup windows</p>
+      <p class="hint">Harmless demo • Modern browsers may block popups</p>
+    </div>
+  </div>
+
+  <script>
+    // NOTE:
+    // This is a harmless demo. Many browsers will block multiple popups
+    // unless allowed by the user. Close all popups by closing your browser.
+
+    let launched = false;
+    const POPUPS = 6;
+    const SIZE = { w: 220, h: 160 };
+    const SPEED_RANGE = [2, 5];
+    const windowsList = [];
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function openPopups() {
+      const sw = screen.availWidth;
+      const sh = screen.availHeight;
+
+      for (let i = 0; i < POPUPS; i++) {
+        const x = rand(0, sw - SIZE.w);
+        const y = rand(0, sh - SIZE.h);
+
+        const win = window.open(
+          '',
+          'popup_' + i + '_' + Date.now(),
+          `width=${SIZE.w},height=${SIZE.h},left=${x},top=${y},resizable=no`
+        );
+
+        if (!win) continue; // popup blocked
+
+        win.document.write(`
+          <!DOCTYPE html>
+          <html><head><title>😈</title>
+          <style>
+            body { margin:0; display:grid; place-items:center; height:100%; background:#111; color:#0f0; font-family:monospace; }
+            div { animation: spin 2s linear infinite; }
+            @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          </style></head>
+          <body><div>POPUP ${i + 1}</div></body></html>
+        `);
+        win.document.close();
+
+        windowsList.push({
+          win,
+          x,
+          y,
+          vx: rand(SPEED_RANGE[0], SPEED_RANGE[1]) * (Math.random() < .5 ? -1 : 1),
+          vy: rand(SPEED_RANGE[0], SPEED_RANGE[1]) * (Math.random() < .5 ? -1 : 1)
+        });
+      }
+
+      animate();
+    }
+
+    function animate() {
+      const sw = screen.availWidth;
+      const sh = screen.availHeight;
+
+      setInterval(() => {
+        windowsList.forEach(p => {
+          if (!p.win || p.win.closed) return;
+
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x <= 0 || p.x + SIZE.w >= sw) p.vx *= -1;
+          if (p.y <= 0 || p.y + SIZE.h >= sh) p.vy *= -1;
+
+          try {
+            p.win.moveTo(p.x, p.y);
+          } catch (e) {}
+        });
+      }, 30);
+    }
+
+    document.addEventListener('click', () => {
+      if (launched) return;
+      launched = true;
+      openPopups();
+    }, { once: true });
+  </script>
+</body>
+</html>
